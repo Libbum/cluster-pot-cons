@@ -1,0 +1,8 @@
+[package]
+name = "cluster_pot_cons"
+version = "0.1.0"
+authors = ["Tim DuBois <tim@neophilus.net>"]
+
+[dependencies]
+regex = "0.1.73"
+glob = "0.2.11"
