@@ -14,7 +14,6 @@ use glob::glob;
 fn process_chunk(path: std::path::PathBuf, mut potfile: &File, re: &Regex) -> u32 {
     let re_chunknum = Regex::new(r"chunk(\d+)/clust.gout").unwrap();
     let cap = re_chunknum.captures(&path.to_str().unwrap()).expect("Malformed path.");
-    //node = cap.at(1).unwrap().parse::<u32>().unwrap();
     println!("Processing chunk {}", cap.at(1).unwrap());
 
     let clust = match File::open(&path) {
@@ -24,6 +23,7 @@ fn process_chunk(path: std::path::PathBuf, mut potfile: &File, re: &Regex) -> u3
 
     let mut line_count: u32 = 0;
 
+    //Use a buffer because these files are upwards of 20GB sometimes.
     let reader = BufReader::new(clust);
     for line in reader.lines() {
         let test = line.unwrap();
@@ -41,6 +41,7 @@ fn process_chunk(path: std::path::PathBuf, mut potfile: &File, re: &Regex) -> u3
 }
 
 fn get_expected_total() -> u32 {
+    //Here we're looking for how many lines we're expecting in the output. This should match our input file.
     let input = match File::open("chunk01/input.gin") {
          Err(why) => panic!("Cannot open chunk01/input.gin: {}", why.description()),
          Ok(file) => file,
@@ -49,7 +50,7 @@ fn get_expected_total() -> u32 {
     let reader = BufReader::new(input);
     for line in reader.lines() {
         let test = line.unwrap();
-        let found = regex::is_match(r"cart", &test).expect("Malformed regex.");
+        let found = regex::is_match(r"cart", &test).expect("Malformed regex."); //the GULP command 'cart' is stated once per input.
         if found {
             line_count = line_count + 1u32;
         }
@@ -67,6 +68,7 @@ fn main() {
 
     println!("Consolidating potential file for node {}...", node);
 
+    //Check for completed files.
     let job_count = glob("chunk*/clust.gout").unwrap().count();
     let dir_count = glob("chunk*").unwrap().count();
     if dir_count != job_count {
@@ -76,7 +78,6 @@ fn main() {
     //setup output file
     let potname = format!("potential_{}.dat", node);
     let potpath = Path::new(&potname);
-
     let potfile = match File::create(&potpath) {
          Err(why) => panic!("couldn't create {}: {}", potpath.display(), why.description()),
          Ok(file) => file,
@@ -84,6 +85,7 @@ fn main() {
 
     let re_final = Regex::new(r"Final energy =\s+(-?\d+\.?\d+)\s+eV").unwrap(); //this is called in a loop. You don't want to have it compile multiple times: https://github.com/rust-lang-nursery/regex
     let mut line_counts: Vec<u32> = Vec::new();
+    //Run our process on all chunk files (in order).
     for chunk in glob("chunk*/clust.gout").expect("Failed to read gout files.") {
         match chunk {
             Err(why) => panic!("Could not process chunk: {:?}", why),
@@ -91,6 +93,7 @@ fn main() {
         }
     }
 
+    //Make sure our potential file has the correct amount of lines in it.
     println!("Verifying Output...");
     let input_count = get_expected_total();
     let mut idx = 1;
@@ -106,6 +109,6 @@ fn main() {
     if complete {
         println!("potential_{}.dat constructed seccesfully.", node);
     } else {
-        println!("There were errors in the construction process. Please check youw input.");
+        println!("There were errors in the construction process. Please check your input.");
     }
 }
