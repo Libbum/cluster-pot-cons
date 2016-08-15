@@ -30,7 +30,7 @@ fn process_chunk(path: std::path::PathBuf, mut potfile: &File, re: &Regex) -> u3
         for cap in re.captures_iter(&test) {
             let potval: f64 = cap.at(1).unwrap_or("").parse::<f64>().unwrap()*239.2311f64;
             let potout = format!("{:.6}\n", potval);
-            line_count = line_count + 1u32;
+            line_count += 1u32;
             match potfile.write_all(potout.as_bytes()) {
                 Err(why) => panic!("couldn't write to output: {}", why.description()),
                 Ok(_) => {},
@@ -52,7 +52,7 @@ fn get_expected_total() -> u32 {
         let test = line.unwrap();
         let found = regex::is_match(r"cart", &test).expect("Malformed regex."); //the GULP command 'cart' is stated once per input.
         if found {
-            line_count = line_count + 1u32;
+            line_count += 1u32;
         }
     }
     line_count
@@ -103,7 +103,7 @@ fn main() {
             println!("WARNING: Chunk {:02} has only processed {} positions of an expected {}.\n         Make sure job has finished correcly.", idx, count, input_count);
             complete = false;
         }
-        idx = idx + 1;
+        idx += 1;
     }
 
     if complete {
